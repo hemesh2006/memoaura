@@ -104,7 +104,7 @@ def main():
     app = QApplication(sys.argv)
 
     # Path to JSON file
-    json_path = r"images.json"
+    json_path = r"C:\Users\HP\Documents\project\memoaura\memoaura\login\images.json"
 
     overlay = ImageOverlay(json_path)
     overlay.show_overlay()

@@ -51,7 +51,7 @@ def beep(triggers, frequency=1000, duration=200):
 
 # Initialize OCR
 reader = easyocr.Reader(['en'], gpu=True)
-with open(r"C:\Users\HP\Documents\project\memoaura\memoaura\login\trigger.json", "r", encoding="utf-8") as f:
+with open(r"C:\Users\HP\Documents\project\memoaura\memoaura\trigger.json", "r", encoding="utf-8") as f:
     responses = json.load(f)
 
 def get_response(trigg):
@@ -114,7 +114,7 @@ class OverlayWindow(QWidget):
 # OCR loop running in background
 def ocr_loop(overlay):
     #load gif here lkke screen sot emoji
-    json_file = r"C:\Users\HP\Documents\project\memoaura\memoaura\login\gif.json"  # Use raw string for path
+    json_file = r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"  # Use raw string for path
 
     while True:
         global spoken_for_cycle
@@ -125,10 +125,10 @@ def ocr_loop(overlay):
                 data = json.load(fread)
             
             # Remove existing skull.png entries
-            data = [i for i in data if i[0] != "C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\login\\df.gif"]
+            data = [i for i in data if i[0] != "C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"]
             
             # Add new entry
-            data.append(["C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\login\\df.gif", [100,500]])
+            data.append(["C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif", [100,500]])
             
             with open(json_file, "w") as fwrite:
                 json.dump(data, fwrite, indent=4)
@@ -150,10 +150,10 @@ def ocr_loop(overlay):
                 data = json.load(fread)
             
             # Remove existing skull.png entries
-            data = [i for i in data if i[0] == "C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\login\\df.gif"]
+            data = [i for i in data if i[0] == "C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"]
             
             # Add new entry
-            data.remove(["C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\login\\df.gif", [100,500]])
+            data.remove(["C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif", [100,500]])
             
             with open(json_file, "w") as fwrite:
                 json.dump(data, fwrite, indent=4)
