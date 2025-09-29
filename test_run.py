@@ -7,62 +7,42 @@ import easyocr
 from PyQt5.QtWidgets import QApplication, QWidget
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QColor, QBrush
-import winsound
 import threading
 import json
 import os
 import random
 import pyttsx3
-spoken_for_cycle = False
-# Initialize the speech engine
+
+# Initialize the speech engine safely
 engine = pyttsx3.init()
+engine_lock = threading.Lock()  # Prevent multiple simultaneous calls
 
-
-def speak(word):
-    """Speak a word safely in a thread."""
+def speak(text):
+    """Speak text safely in a thread."""
     def run():
-        engine.say(word)
-        engine.runAndWait()
+        with engine_lock:
+            engine.say(text)
+            engine.runAndWait()
     threading.Thread(target=run, daemon=True).start()
-# Global variable to track if we already responded
-
-
-next_speak = True
-
-def beep(triggers, frequency=1000, duration=200):
-    """
-    Beep and speak **one random trigger word** only if `next_speak` is True.
-    `next_speak` is reset when no triggers are detected.
-    """
-    global next_speak
-    
-    if not triggers or len(triggers) == 0:
-        # No triggers, allow speaking next time triggers appear
-        next_speak = True
-        return
-    
-    if next_speak:
-        word = random.choice(list(triggers))
-        winsound.Beep(frequency, duration)
-        print(f"Detected trigger: {word}")
-        speak(get_response({word}))
-        next_speak = False  # prevent further speaking until triggers disappear
-
 
 # Initialize OCR
 reader = easyocr.Reader(['en'], gpu=True)
-with open(r"C:\Users\HP\Documents\project\memoaura\memoaura\trigger.json", "r", encoding="utf-8") as f:
+
+# Load trigger responses
+trigger_json_path = r"C:\Users\HP\Documents\project\memoaura\memoaura\trigger.json"
+with open(trigger_json_path, "r", encoding="utf-8") as f:
     responses = json.load(f)
 
+# Global variable to track if we already responded
+next_speak = True
+
 def get_response(trigg):
-    trigg = random.choice(list(trigg))  # pick one word from set
-    trigg = trigg.lower()
-    if trigg in responses:
-        a=random.choice(responses[trigg])
-        speak(a)
-        return a
-    else:
-        return ""
+    """Return a response string for a trigger word."""
+    trigg_word = random.choice(list(trigg)).lower()
+    if trigg_word in responses:
+        response = random.choice(responses[trigg_word])
+        return response
+    return ""
 
 # Define trigger words
 trigger_words = {'divorce', 'unloved', 'quite', 'recovery', 'jobless', 'cutting',
@@ -82,8 +62,6 @@ trigger_words = {'divorce', 'unloved', 'quite', 'recovery', 'jobless', 'cutting'
                  'burnout', 'deadline', 'self-doubt', 'anger', 'regretful', 'suicide',
                  'hopeless', 'peaceful', 'pressured', 'uncertain', 'fear', 'unwanted',
                  'change', 'failure', 'quit'}
-
-
 
 # Overlay window for highlights
 class OverlayWindow(QWidget):
@@ -113,23 +91,26 @@ class OverlayWindow(QWidget):
 
 # OCR loop running in background
 def ocr_loop(overlay):
-    #load gif here lkke screen sot emoji
-    json_file = r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"  # Use raw string for path
+    # Path to GIF JSON file
+    json_file = r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"
+
+    global next_speak
 
     while True:
-        global spoken_for_cycle
-        spoken_for_cycle=False
-        # Safely read and modify JSON
+        # Reset speak flag
+        next_speak = True
+
+        # Safely read and update JSON for overlay GIF
         if os.path.exists(json_file):
             with open(json_file, "r") as fread:
                 data = json.load(fread)
-            
-            # Remove existing skull.png entries
-            data = [i for i in data if i[0] != "C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"]
-            
+
+            # Remove existing df.gif entries
+            data = [i for i in data if i[0] != r"C:\Users\HP\Documents\project\memoaura\memoaura\df.gif"]
+
             # Add new entry
-            data.append(["C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif", [100,500]])
-            
+            data.append([r"C:\Users\HP\Documents\project\memoaura\memoaura\df.gif", [100, 500]])
+
             with open(json_file, "w") as fwrite:
                 json.dump(data, fwrite, indent=4)
 
@@ -145,19 +126,6 @@ def ocr_loop(overlay):
 
         boxes_to_show = []
         triggers_found = set()
-        if os.path.exists(json_file):
-            with open(json_file, "r") as fread:
-                data = json.load(fread)
-            
-            # Remove existing skull.png entries
-            data = [i for i in data if i[0] == "C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"]
-            
-            # Add new entry
-            data.remove(["C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif", [100,500]])
-            
-            with open(json_file, "w") as fwrite:
-                json.dump(data, fwrite, indent=4)
-            
 
         # Exact word matching
         for bbox, text, _ in results:
@@ -166,17 +134,23 @@ def ocr_loop(overlay):
                 triggers_found.add(text_clean)
                 scaled_bbox = [[pt[0]*scale_x, pt[1]*scale_y] for pt in bbox]
                 boxes_to_show.append(scaled_bbox)
-        global next_speak
-        if triggers_found:
-            print(f"Trigger words detected: {triggers_found}")
-            beep(frequency=2000, duration=200,triggers=triggers_found)
-        else:
-            next_speak=True
+
+        # Speak a random trigger word response safely
+        if triggers_found and next_speak:
+            word_to_speak = random.choice(list(triggers_found))
+            response_text = random.choice(responses.get(word_to_speak, [""]))
+            if response_text:
+                speak(response_text)
+                next_speak = False
+            print(f"Trigger words detected: {triggers_found} -> Speaking: {response_text}")
             
+        else:
+            next_speak = True
 
         overlay.update_boxes(boxes_to_show)
-        time.sleep(0.3)  # Adjust for speed
+          
 
+# Main
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     overlay = OverlayWindow()
