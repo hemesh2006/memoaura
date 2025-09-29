@@ -1,22 +1,10 @@
 {
     "users": [
         {
-            "username": "Hemesh M",
+            "username": "hem",
             "email": "hemesh746@gmail.com",
-            "mobile": "8270029588",
-            "password": "hemesh"
-        },
-        {
-            "username": "Hemesh Manibalan",
-            "email": "hemesh746@gmail.com",
-            "mobile": "8270029588",
-            "password": "9047009912"
-        },
-        {
-            "username": "hemesh",
-            "email": "hemesh746@gmail.com",
-            "mobile": "8270029588",
-            "password": "345"
+            "mobile": "82700295888",
+            "password": "hem"
         }
     ]
 }
