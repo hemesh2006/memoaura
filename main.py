@@ -1,50 +1,29 @@
-import pyautogui, cv2
-import numpy as np
-import easyocr
-import string
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-import json
-import time
-json_path=r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"
-load_gif="C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"
-def call(triggered_words):
-    
-    with open(json_path, "r") as f:
-        data = json.load(f)
-        imgs=[i[0] for i in data]
-        if load_gif  not in imgs:
-            print("GIF already playing. Skipping new trigger.")
-            return
-        data.append([load_gif,[100,500]])
-        time.sleep(4)
-        json.dump(data, open(json_path, "w"), indent=4)
+import subprocess
+import os
 
-reader = easyocr.Reader(['en'], gpu=True)
-stop_words = set(stopwords.words('english'))
-trigger_words = {"resign","work","resssign","quite","stop","job","pressure","stress","depression","sex","fear","threat","depressed","stressed","anxiety","deadline","deadline_is_over","tough","pressure"}
+def run_multiple_py(files):
+    processes = []
+    for file in files:
+        if os.path.exists(file):
+            print(f"Starting {file} ...")
+            # Start each file in a separate process
+            p = subprocess.Popen(["python", file])
+            processes.append(p)
+        else:
+            print(f"File not found: {file}")
 
-def full_screen_ocr():
-    screenshot = pyautogui.screenshot()
-    img = np.array(screenshot)
-    img = cv2.resize(img, (img.shape[1]//2, img.shape[0]//2))
-    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-    results = reader.readtext(gray)
-    texts = " ".join([text for (_, text, _) in results])
-    words = set(word.lower() for word in word_tokenize(texts)
-                if word not in string.punctuation and word.lower() not in stop_words)
-    if trigger_words & words:
-        print(f"Trigger word detected: {trigger_words & words}")
-        call(trigger_words & words)
-    #reset the logo
-    with open(json_path, "r") as f:
-        data = json.load(f)
-        for i in data:
-            if i[0]==load_gif:
-                data.remove(i)
-                break
-        json.dump(data, open(json_path, "w"), indent=4)
+    # Wait for all processes to complete
+    for p in processes:
+        p.wait()
 
 if __name__ == "__main__":
-    while True:
-        full_screen_ocr()
+    # List of Python files you want to run
+    files_to_run = [
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\image_overlay.py",
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\msg_scr.py",
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\gif_overlay.py",
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\message_of_chat.py",
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\credentials.py"
+    ]
+    
+    run_multiple_py(files_to_run)

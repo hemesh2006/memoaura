@@ -10,6 +10,10 @@ from PyQt5.QtGui import QMovie
 from PyQt5.QtCore import Qt, QSize
 
 CREDENTIALS_FILE = "users.json"
+sys_info_path=r"C:\Users\HP\Documents\project\memoaura\memoaura\system_info.json"
+f=open(sys_info_path)
+data=json.load(f)
+f.close()
 
 # ------------------------------
 # Ensure JSON exists
@@ -150,6 +154,11 @@ class LoginPage(QWidget):
             if user["username"] == username and user["password"] == password:
                 QMessageBox.information(self, "Success", f"Welcome {username}!")
                 self.parent.close()
+                f=open(sys_info_path,"r")
+                datas=json.load(f)
+                datas['already_login']="True"
+                datas['username']=username
+                json.dump(datas,open(sys_info_path,"w"),indent=4)   
                 return
 
         QMessageBox.warning(self, "Error", "Invalid username or password.")
@@ -323,4 +332,7 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
+    if data['already_login']=="True":
+        print("Already logged in. Exiting credentials overlay.")
+        sys.exit(0)
     main()

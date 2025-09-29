@@ -3,6 +3,7 @@ import json
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QWidget
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QTimer
+json_path = r"C:\Users\HP\Documents\project\memoaura\memoaura\images.json"
 
 class ImageOverlay(QMainWindow):
     def __init__(self, json_path):
@@ -104,8 +105,7 @@ def main():
     app = QApplication(sys.argv)
 
     # Path to JSON file
-    json_path = r"C:\Users\HP\Documents\project\memoaura\memoaura\login\images.json"
-
+    
     overlay = ImageOverlay(json_path)
     overlay.show_overlay()
 
