@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QTimer
 
-SETTINGS_FILE = "settings.json"
+SETTINGS_FILE = r"C:\Users\HP\Documents\project\memoaura\memoaura\system_info.json"
 DEBUG_FILE = "debug_logs.json"
 
 # ---------------- Settings Load/Save ----------------

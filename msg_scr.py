@@ -14,29 +14,46 @@ import random
 
 # Initialize OCR
 reader = easyocr.Reader(['en'], gpu=True)
-json_path=r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"
-load_gif="C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"
+json_path = r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"
+load_gif = r"C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"
 
-# Define trigger words
-trigger_words = {'divorce', 'unloved', 'quite', 'recovery', 'jobless', 'cutting',
-                 'loneliness', 'guilt', 'cheating', 'rejection', 'mistake', 'loss',
-                 'shattered', 'hopelessness', 'sadness', 'lost', 'weak', 'betrayal',
-                 'ignored', 'stressed', 'useless', 'hate myself', 'blood', 'strong',
-                 'depression', 'overwhelmed', 'helpless', 'empty', 'grateful', 'knife',
-                 'broken', 'work', 'pressure', 'workload', 'regret', 'anxiety', 'insecure',
-                 'worthless', 'trauma', 'tough', 'sex', 'deadline_is_over', 'abuse',
-                 'motivated', 'end life', 'pain', 'jealousy', 'stress', 'depressed', 'alone',
-                 'unsafe', 'drained', 'stop', 'danger', 'threat', 'abandonment', 'confident',
-                 'bullying', 'unemployment', 'nervous', 'not enough', 'unstable', 'calm',
-                 'frustration', 'inspired', 'joy', 'worry', 'devastated', 'self-harm',
-                 'painkillers', 'nightmare', 'crying', 'excited', 'happy', 'resssign',
-                 'unworthy', 'panic', 'tired', 'resign', 'pills', 'shame', 'overdose',
-                 'overwork', 'violence', 'control', 'scared', 'suffocating', 'breakup',
-                 'burnout', 'deadline', 'self-doubt', 'anger', 'regretful', 'suicide',
-                 'hopeless', 'peaceful', 'pressured', 'uncertain', 'fear', 'unwanted',
-                 'change', 'failure', 'quit'}
+# Paths for trigger words
+triggered_words_json = r"C:\Users\HP\Documents\project\memoaura\memoaura\triggered_words.json"
+system_info_json = r"C:\Users\HP\Documents\project\memoaura\memoaura\system_info.json"
 
-# Overlay window for highlights
+# --- Load triggered words safely ---
+if os.path.exists(triggered_words_json):
+    with open(triggered_words_json, "r") as f:
+        try:
+            trigger_words = json.load(f)
+        except json.JSONDecodeError:
+            trigger_words = []
+else:
+    trigger_words = []
+
+# --- Load system info safely ---
+if os.path.exists(system_info_json):
+    with open(system_info_json, "r") as f:
+        try:
+            dat = json.load(f)
+        except json.JSONDecodeError:
+            dat = {"keywords": []}
+else:
+    dat = {"keywords": []}
+
+key = dat.get("keywords", [])
+
+# Merge triggers
+trigger_words.extend(key)
+trigger_words = list(set(trigger_words))  # remove duplicates
+
+# Save back safely
+dat["keywords"] = trigger_words
+with open(system_info_json, "w") as f:
+    json.dump(dat, f, indent=4)
+trigger_words = set(trigger_words)
+
+# --- Overlay window for highlights ---
 class OverlayWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -62,8 +79,7 @@ class OverlayWindow(QWidget):
             painter.setPen(Qt.NoPen)
             painter.drawRect(x_min, y_min, x_max - x_min, y_max - y_min)
 
-# Log trigger words with response
-# Log trigger words with response
+# --- Log trigger words ---
 def log_triggers(triggers_found):
     log_file = "log.json"
     # Load existing log
@@ -79,9 +95,8 @@ def log_triggers(triggers_found):
     # Unique triggers, all lowercase
     unique_triggers = list(set([w.lower() for w in triggers_found]))
 
-    
     # Append new log entry
-    logs={
+    logs = {
         "word": unique_triggers,
     }
 
@@ -89,17 +104,27 @@ def log_triggers(triggers_found):
     with open(log_file, "w", encoding="utf-8") as f:
         json.dump(logs, f, indent=4)
 
-# OCR loop running in background
+# --- OCR loop ---
 def ocr_loop(overlay):
     while True:
-        with open(json_path, "r") as f:
-            data = json.load(f)
-            imgs=[i[0] for i in data]
-            if load_gif  not in imgs:
-                print("GIF already playing. Skipping new trigger.")
-                data.append([load_gif,[100,500]])
-                json.dump(data, open(json_path, "w"), indent=4)
+        # Safe load of gif.json
+        if os.path.exists(json_path):
+            with open(json_path, "r") as f:
+                try:
+                    data = json.load(f)
+                except json.JSONDecodeError:
+                    data = []
+        else:
+            data = []
 
+        imgs = [i[0] for i in data]
+        if load_gif not in imgs:
+            print("GIF already playing. Skipping new trigger.")
+            data.append([load_gif, [100, 500]])
+            with open(json_path, "w") as f:
+                json.dump(data, f, indent=4)
+
+        # Screenshot and OCR
         screenshot = pyautogui.screenshot()
         img = np.array(screenshot)
         img_small = cv2.resize(img, (img.shape[1]//2, img.shape[0]//2))
@@ -123,21 +148,27 @@ def ocr_loop(overlay):
         # Update overlay highlights
         overlay.update_boxes(boxes_to_show)
 
-        # Log triggers sequentially
+        # Log triggers if any
         if triggers_found:
             print(f"Trigger words detected: {triggers_found}")
             log_triggers(triggers_found)
-        with open(json_path, "r") as f:
-            data = json.load(f)
-            for i in data:
-                if i[0]==load_gif:
-                    data.remove(i)
-                    break
-            json.dump(data, open(json_path, "w"), indent=4)
+
+        # Remove GIF after processing
+        if os.path.exists(json_path):
+            with open(json_path, "r") as f:
+                try:
+                    data = json.load(f)
+                except json.JSONDecodeError:
+                    data = []
+
+            data = [item for item in data if item[0] != load_gif]
+
+            with open(json_path, "w") as f:
+                json.dump(data, f, indent=4)
 
         time.sleep(0.3)
 
-# Main
+# --- Main ---
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     overlay = OverlayWindow()
