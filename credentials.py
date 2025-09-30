@@ -10,7 +10,7 @@ from PyQt5.QtGui import QMovie
 from PyQt5.QtCore import Qt, QSize
 
 CREDENTIALS_FILE = "users.json"
-sys_info_path=r"C:\Users\HP\Documents\project\memoaura\memoaura\system_info.json"
+sys_info_path=r"C:\Users\HP\Documents\project\memoaura\memoaura\account.json"
 f=open(sys_info_path)
 data=json.load(f)
 f.close()

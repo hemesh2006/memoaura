@@ -23,7 +23,8 @@ if __name__ == "__main__":
         r"C:\Users\HP\Documents\project\memoaura\memoaura\msg_scr.py",
         r"C:\Users\HP\Documents\project\memoaura\memoaura\gif_overlay.py",
         r"C:\Users\HP\Documents\project\memoaura\memoaura\message_of_chat.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\credentials.py"
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\credentials.py",
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\setting.py"
     ]
     
     run_multiple_py(files_to_run)
