@@ -5,10 +5,9 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QComboBox, QSlider,
     QPushButton, QTabWidget, QTextEdit, QLineEdit, QCheckBox, QInputDialog, QMessageBox
 )
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt
 
 SETTINGS_FILE = r"C:\Users\HP\Documents\project\memoaura\memoaura\system_info.json"
-DEBUG_FILE = "debug_logs.json"
 
 # ---------------- Settings Load/Save ----------------
 def load_settings():
@@ -98,7 +97,6 @@ class TransparentSettings(DraggableWindow):
         super().__init__()
         self.settings = load_settings()
         self.telegram_unlocked = False
-        self.debug_last_lines = []
         self.init_ui()
 
     def init_ui(self):
@@ -220,14 +218,11 @@ class TransparentSettings(DraggableWindow):
         debug_layout = QVBoxLayout()
         debug_layout.setContentsMargins(30, 30, 30, 30)
         debug_layout.setSpacing(20)
-        self.debug_terminal = QTextEdit()
-        self.debug_terminal.setReadOnly(True)
-        self.debug_terminal.setMinimumHeight(200)
-        debug_layout.addWidget(self.debug_terminal)
-        self.debug_clear = QPushButton("Clear Debug Terminal")
-        self.debug_clear.setFixedHeight(40)
-        self.debug_clear.clicked.connect(lambda: self.debug_terminal.clear())
-        debug_layout.addWidget(self.debug_clear, alignment=Qt.AlignRight)
+
+        self.debug_checkbox = QCheckBox("Enable Debug Mode")
+        self.debug_checkbox.setChecked(self.settings.get("debug_mode", False))
+        debug_layout.addWidget(self.debug_checkbox)
+
         debug_tab.setLayout(debug_layout)
         self.tabs.addTab(debug_tab, "Debug Mode")
 
@@ -237,11 +232,6 @@ class TransparentSettings(DraggableWindow):
         # Load settings and connect signals
         self.load_settings_to_ui()
         self.connect_signals()
-
-        # Timer for debug logs
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_debug_logs)
-        self.timer.start(1000)
 
         self.setStyleSheet("""
             QWidget { background-color: rgba(0,0,0,200); color: #00FF00; }
@@ -297,22 +287,6 @@ class TransparentSettings(DraggableWindow):
         self.user_id_input.textChanged.connect(self.save_all_settings)
 
     # ---------------- Other Methods ----------------
-    def update_debug_logs(self):
-        try:
-            if os.path.exists(DEBUG_FILE):
-                with open(DEBUG_FILE, "r") as f:
-                    logs = json.load(f)
-                new_lines = [line for line in logs if line not in self.debug_last_lines]
-                if new_lines:
-                    for line in new_lines:
-                        self.debug_terminal.append(line)
-                    self.debug_terminal.verticalScrollBar().setValue(
-                        self.debug_terminal.verticalScrollBar().maximum()
-                    )
-                    self.debug_last_lines = logs
-        except Exception as e:
-            self.debug_terminal.append(f"Error reading debug JSON: {e}")
-
     def load_settings_to_ui(self):
         s = self.settings
         try:
@@ -326,6 +300,7 @@ class TransparentSettings(DraggableWindow):
             self.notification_checkbox.setChecked(s.get("enable_notifications", True))
             self.keyword_input.setText("\n".join(s.get("keywords", [])))
             self.trigger_count_slider.setValue(s.get("trigger_word_threshold", 3))
+            self.debug_checkbox.setChecked(s.get("debug_mode", False))
         except Exception as e:
             print("Error loading settings:", e)
 
@@ -340,7 +315,8 @@ class TransparentSettings(DraggableWindow):
             "dnd_mode": self.dnd_checkbox.isChecked(),
             "enable_notifications": self.notification_checkbox.isChecked(),
             "keywords": [k.strip() for k in self.keyword_input.toPlainText().splitlines() if k.strip()],
-            "trigger_word_threshold": self.trigger_count_slider.value()
+            "trigger_word_threshold": self.trigger_count_slider.value(),
+            "debug_mode": self.debug_checkbox.isChecked()
         }
         if self.telegram_unlocked:
             s["telegram_token"] = self.bot_token_input.text()
@@ -360,6 +336,7 @@ class TransparentSettings(DraggableWindow):
         self.notification_checkbox.stateChanged.connect(self.save_all_settings)
         self.keyword_input.textChanged.connect(self.save_all_settings)
         self.trigger_count_slider.valueChanged.connect(self.save_all_settings)
+        self.debug_checkbox.stateChanged.connect(self.save_all_settings)
 
 # ---------------- Run Application ----------------
 if __name__ == "__main__":
