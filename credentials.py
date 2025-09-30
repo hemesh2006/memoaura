@@ -8,7 +8,8 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QMovie
 from PyQt5.QtCore import Qt, QSize
-
+import  NOTIFICATION.notify2 as p
+import load
 CREDENTIALS_FILE = "users.json"
 sys_info_path=r"C:\Users\HP\Documents\project\memoaura\memoaura\account.json"
 f=open(sys_info_path)
@@ -154,17 +155,23 @@ class LoginPage(QWidget):
             if user["username"] == username and user["password"] == password:
                 QMessageBox.information(self, "Success", f"Welcome {username}!")
                 self.parent.close()
+                p.threading.Thread(target=p.show_notification, args=("✅ login succeed", "green", "white")).start()
                 f=open(sys_info_path,"r")
                 datas=json.load(f)
                 datas['already_login']="True"
                 datas['username']=username
                 json.dump(datas,open(sys_info_path,"w"),indent=4)   
+                sys.exit(0)
                 return
 
         QMessageBox.warning(self, "Error", "Invalid username or password.")
+        p.threading.Thread(target=p.show_notification, args=("⚠️ Invalid Username", "red", "white")).start()
+
 
     def forgot_password(self):
         QMessageBox.information(self, "Forgot Password", "Please contact admin to reset your password.")
+        p.threading.Thread(target=p.show_notification, args=("⚠️ Password Reset Required", "red", "white")).start()
+
 
 # ------------------------------
 # Signup Page
@@ -256,10 +263,14 @@ class SignupPage(QWidget):
 
         if not username or not email or not mobile or not password or not confirm:
             QMessageBox.warning(self, "Error", "All fields are required.")
+            p.threading.Thread(target=p.show_notification, args=("⚠️ All Fields are required", "red", "white")).start()
+
             return
 
         if password != confirm:
             QMessageBox.warning(self, "Error", "Passwords do not match.")
+            p.threading.Thread(target=p.show_notification, args=("⚠️ Password Not Match", "red", "white")).start()
+
             return
 
         with open(CREDENTIALS_FILE, "r") as f:
@@ -267,6 +278,8 @@ class SignupPage(QWidget):
 
         if any(u["username"] == username for u in data["users"]):
             QMessageBox.warning(self, "Error", "Username already exists.")
+            p.threading.Thread(target=p.show_notification, args=("⚠️ Username Exists", "red", "white")).start()
+
             return
 
         data["users"].append({
@@ -280,6 +293,7 @@ class SignupPage(QWidget):
             json.dump(data, f, indent=4)
 
         QMessageBox.information(self, "Success", "Account created! Please login.")
+        p.threading.Thread(target=p.show_notification, args=("✅  please login!", "green", "white")).start()
         self.parent.switch_page("login")
 
 # ------------------------------
@@ -332,7 +346,12 @@ def main():
     sys.exit(app.exec_())
 
 if __name__ == "__main__":
+    app = load.QApplication(sys.argv)
+    loader = load.LoadingOverlay()
+    loader.show()
+    app.exec_()
     if data['already_login']=="True":
+        p.threading.Thread(target=p.show_notification, args=(f"✅  Hello {data['username']}", "green", "white")).start()
         print("Already logged in. Exiting credentials overlay.")
         sys.exit(0)
     main()

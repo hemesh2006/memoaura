@@ -21,8 +21,9 @@ def show_notification(msg, bg_color="#222", fg_color="white"):
     root.mainloop()
 
 # Multiple styles
-threading.Thread(target=show_notification, args=("🔔 Default Notification", "#333", "white")).start()
-time.sleep(1)
-threading.Thread(target=show_notification, args=("✅ Success Message", "green", "white")).start()
-time.sleep(1)
-threading.Thread(target=show_notification, args=("⚠️ Error Occurred", "red", "white")).start()
+if __name__ == "__main__":
+    threading.Thread(target=show_notification, args=("🔔 Default Notification", "#333", "white")).start()
+    time.sleep(1)
+    threading.Thread(target=show_notification, args=("✅ Success Message", "green", "white")).start()
+    time.sleep(1)
+    threading.Thread(target=show_notification, args=("⚠️ Error Occurred", "red", "white")).start()

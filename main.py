@@ -6,6 +6,7 @@ def run_multiple_py(files):
     for file in files:
         if os.path.exists(file):
             print(f"Starting {file} ...")
+            
             # Start each file in a separate process
             p = subprocess.Popen(["python", file])
             processes.append(p)
@@ -24,7 +25,8 @@ if __name__ == "__main__":
         r"C:\Users\HP\Documents\project\memoaura\memoaura\gif_overlay.py",
         r"C:\Users\HP\Documents\project\memoaura\memoaura\message_of_chat.py",
         r"C:\Users\HP\Documents\project\memoaura\memoaura\credentials.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\setting.py"
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\setting.py",
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\debug_mode.py"
     ]
     
     run_multiple_py(files_to_run)
