@@ -1,4 +1,5 @@
 {
     "already_login": "True",
-    "username": "hem"
+    "username": "hem",
+    "protect": "False"
 }

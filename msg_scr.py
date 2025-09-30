@@ -11,7 +11,7 @@ import threading
 import json
 import os
 import random
-
+import layer as a
 # Initialize OCR
 reader = easyocr.Reader(['en'], gpu=True)
 json_path = r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"
@@ -94,6 +94,11 @@ def log_triggers(triggers_found):
 
     # Unique triggers, all lowercase
     unique_triggers = list(set([w.lower() for w in triggers_found]))
+    if "quite" in unique_triggers:
+        gty=open("account.json")
+        drff=json.load(gty)
+        drff['protect']="true"
+        json.dump(drff,open("account.json","w"))
 
     # Append new log entry
     logs = {
@@ -125,6 +130,12 @@ def ocr_loop(overlay):
                 json.dump(data, f, indent=4)
 
         # Screenshot and OCR
+        with open(json_path, "r") as f:
+                try:
+                    data ={}
+                    json.dump(data,open(json_path,"w"))
+                except json.JSONDecodeError:
+                    data = []
         screenshot = pyautogui.screenshot()
         img = np.array(screenshot)
         img_small = cv2.resize(img, (img.shape[1]//2, img.shape[0]//2))

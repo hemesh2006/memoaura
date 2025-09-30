@@ -26,7 +26,8 @@ if __name__ == "__main__":
         r"C:\Users\HP\Documents\project\memoaura\memoaura\message_of_chat.py",
         r"C:\Users\HP\Documents\project\memoaura\memoaura\credentials.py",
         r"C:\Users\HP\Documents\project\memoaura\memoaura\setting.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\debug_mode.py"
+        r"C:\Users\HP\Documents\project\memoaura\memoaura\debug_mode.py",
+        "test_run.py"
     ]
     
     run_multiple_py(files_to_run)
