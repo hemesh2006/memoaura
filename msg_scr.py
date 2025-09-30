@@ -10,50 +10,89 @@ from PyQt5.QtGui import QPainter, QColor, QBrush
 import threading
 import json
 import os
-import random
-import layer as a
+from lwindow_lock import Ard
 # Initialize OCR
 reader = easyocr.Reader(['en'], gpu=True)
-json_path = r"C:\Users\HP\Documents\project\memoaura\memoaura\gif.json"
-load_gif = r"C:\\Users\\HP\\Documents\\project\\memoaura\\memoaura\\df.gif"
+import winsound  # Add at the top
 
-# Paths for trigger words
-triggered_words_json = r"C:\Users\HP\Documents\project\memoaura\memoaura\triggered_words.json"
-system_info_json = r"C:\Users\HP\Documents\project\memoaura\memoaura\system_info.json"
+def trigger_alert():
+    try:
+        # Windows beep: frequency=1000Hz, duration=300ms
+        winsound.Beep(1000, 300)
+    except:
+        # Fallback: ASCII bell
+        print('\a')
 
-# --- Load triggered words safely ---
-if os.path.exists(triggered_words_json):
-    with open(triggered_words_json, "r") as f:
+# Paths
+json_path = "gif.json"
+load_gif = "circle.gif"
+triggered_words_json = "triggered_words.json"
+system_info_json = "system_info.json"
+log_file = "log.json"
+account_json = "account.json"
+def update_protect_only(val="true"):
+    try:
+        # Read existing account.json
+        if os.path.exists(account_json):
+            with open(account_json, "r") as f:
+                try:
+                    account_data_m = json.load(f)
+                    if not isinstance(account_data_m, dict):
+                        account_data_m = {}
+                except json.JSONDecodeError:
+                    account_data_m = {}
+        else:
+            account_data_m = {}
+
+        # Only update the 'protect' key, leave everything else intact
+        account_data_m['protect'] = val
+
+        # Write back
+        with open(account_json, "w") as f:
+            json.dump(account_data_m, f, indent=4)
+
+    except Exception as e:
+        print(f"[ERROR] Could not update protect: {e}")
+
+# --- Load trigger words safely ---
+def load_json_list(path):
+    if os.path.exists(path):
         try:
-            trigger_words = json.load(f)
+            with open(path, "r") as f:
+                data_m = json.load(f)
+                if not isinstance(data_m, list):
+                    data_m = []
         except json.JSONDecodeError:
-            trigger_words = []
-else:
-    trigger_words = []
+            data_m = []
+    else:
+        data_m = []
+    return data_m
 
-# --- Load system info safely ---
-if os.path.exists(system_info_json):
-    with open(system_info_json, "r") as f:
+def load_json_dict(path, default=None):
+    if os.path.exists(path):
         try:
-            dat = json.load(f)
+            with open(path, "r") as f:
+                data_m = json.load(f)
+                if not isinstance(data_m, dict):
+                    data_m = default if default is not None else {}
         except json.JSONDecodeError:
-            dat = {"keywords": []}
-else:
-    dat = {"keywords": []}
+            data_m = default if default is not None else {}
+    else:
+        data_m = default if default is not None else {}
+    return data_m
 
-key = dat.get("keywords", [])
+trigger_words = set(load_json_list(triggered_words_json))
+system_info = load_json_dict(system_info_json, {"keywords": []})
 
-# Merge triggers
-trigger_words.extend(key)
-trigger_words = list(set(trigger_words))  # remove duplicates
+# Merge keywords
+trigger_words.update(system_info.get("keywords", []))
+system_info["keywords"] = list(trigger_words)
 
-# Save back safely
-dat["keywords"] = trigger_words
+# Save merged keywords back
 with open(system_info_json, "w") as f:
-    json.dump(dat, f, indent=4)
-trigger_words = set(trigger_words)
+    json.dump(system_info, f, indent=4)
 
-# --- Overlay window for highlights ---
+# --- Overlay window ---
 class OverlayWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -79,103 +118,81 @@ class OverlayWindow(QWidget):
             painter.setPen(Qt.NoPen)
             painter.drawRect(x_min, y_min, x_max - x_min, y_max - y_min)
 
-# --- Log trigger words ---
+# --- Logging ---
 def log_triggers(triggers_found):
-    log_file = "log.json"
-    # Load existing log
-    if os.path.exists(log_file):
-        with open(log_file, "r", encoding="utf-8") as f:
-            try:
-                logs = json.load(f)
-            except json.JSONDecodeError:
-                logs = []
-    else:
-        logs = []
+    logs = load_json_list(log_file)  
 
-    # Unique triggers, all lowercase
     unique_triggers = list(set([w.lower() for w in triggers_found]))
+
+    # Update account.json if "quite" detected
     if "quite" in unique_triggers:
-        gty=open("account.json")
-        drff=json.load(gty)
-        drff['protect']="true"
-        json.dump(drff,open("account.json","w"))
+        account_data_m = load_json_dict(account_json)
+        account_data_m['protect'] = "true"
+        with open(account_json, "w") as f:
+            json.dump(account_data_m, f, indent=4)
 
-    # Append new log entry
-    logs = {
-        "word": unique_triggers,
-    }
-
-    # Save back
+    # Save last triggers to log.json
     with open(log_file, "w", encoding="utf-8") as f:
-        json.dump(logs, f, indent=4)
+        json.dump({"word": unique_triggers}, f, indent=4)
 
 # --- OCR loop ---
 def ocr_loop(overlay):
     while True:
-        # Safe load of gif.json
-        if os.path.exists(json_path):
-            with open(json_path, "r") as f:
-                try:
-                    data = json.load(f)
-                except json.JSONDecodeError:
-                    data = []
-        else:
-            data = []
+        try:
+            # Load gif.json safely
+            data_m = load_json_list(json_path)
 
-        imgs = [i[0] for i in data]
-        if load_gif not in imgs:
-            print("GIF already playing. Skipping new trigger.")
-            data.append([load_gif, [100, 500]])
+            # Add GIF trigger if not present
+            imgs = [i[0] for i in data_m if isinstance(i, list) and len(i) > 0]
+            if load_gif not in imgs:
+                print("GIF already playing. Skipping new trigger.")
+                data_m.append([load_gif, [820,900]])
+                with open(json_path, "w") as f:
+                    json.dump(data_m, f, indent=4)
+
+            # Take screenshot and run OCR
+            screenshot = pyautogui.screenshot()
+            img = np.array(screenshot)
+            img_small = cv2.resize(img, (img.shape[1] // 2, img.shape[0] // 2))
+            gray = cv2.cvtColor(img_small, cv2.COLOR_RGB2GRAY)
+            results = reader.readtext(gray)
+
+            scale_x = img.shape[1] / img_small.shape[1]
+            scale_y = img.shape[0] / img_small.shape[0]
+
+            boxes_to_show = []
+            triggers_found = set()
+
+            for bbox, text, _ in results:
+                text_clean = text.lower()
+                if text_clean in trigger_words:
+                    triggers_found.add(text_clean)
+                    scaled_bbox = [[pt[0]*scale_x, pt[1]*scale_y] for pt in bbox]
+                    boxes_to_show.append(scaled_bbox)
+
+            overlay.update_boxes(boxes_to_show)
+
+            if triggers_found:
+                print(f"Trigger words detected: {triggers_found}")
+                log_triggers(triggers_found)
+                update_protect_only()
+                s=Ard()
+                #s.lock_window()
+                trigger_alert()
+            else:
+                update_protect_only("False")
+                s=Ard()
+                #s.lock_window(False)
+
+                
+
+            # Remove GIF from gif.json after processing
+            data_m = [item for item in data_m if not (isinstance(item, list) and item[0] == load_gif)]
             with open(json_path, "w") as f:
-                json.dump(data, f, indent=4)
+                json.dump(data_m, f, indent=4)
 
-        # Screenshot and OCR
-        with open(json_path, "r") as f:
-                try:
-                    data ={}
-                    json.dump(data,open(json_path,"w"))
-                except json.JSONDecodeError:
-                    data = []
-        screenshot = pyautogui.screenshot()
-        img = np.array(screenshot)
-        img_small = cv2.resize(img, (img.shape[1]//2, img.shape[0]//2))
-        gray = cv2.cvtColor(img_small, cv2.COLOR_RGB2GRAY)
-        results = reader.readtext(gray)
-
-        scale_x = img.shape[1] / img_small.shape[1]
-        scale_y = img.shape[0] / img_small.shape[0]
-
-        boxes_to_show = []
-        triggers_found = set()
-
-        # Detect trigger words
-        for bbox, text, _ in results:
-            text_clean = text.lower()
-            if text_clean in trigger_words:
-                triggers_found.add(text_clean)
-                scaled_bbox = [[pt[0]*scale_x, pt[1]*scale_y] for pt in bbox]
-                boxes_to_show.append(scaled_bbox)
-
-        # Update overlay highlights
-        overlay.update_boxes(boxes_to_show)
-
-        # Log triggers if any
-        if triggers_found:
-            print(f"Trigger words detected: {triggers_found}")
-            log_triggers(triggers_found)
-
-        # Remove GIF after processing
-        if os.path.exists(json_path):
-            with open(json_path, "r") as f:
-                try:
-                    data = json.load(f)
-                except json.JSONDecodeError:
-                    data = []
-
-            data = [item for item in data if item[0] != load_gif]
-
-            with open(json_path, "w") as f:
-                json.dump(data, f, indent=4)
+        except Exception as e:
+            print(f"[ERROR] OCR loop encountered an error: {e}")
 
         time.sleep(0.3)
 
@@ -186,5 +203,4 @@ if __name__ == "__main__":
     overlay.showFullScreen()
 
     threading.Thread(target=ocr_loop, args=(overlay,), daemon=True).start()
-
     sys.exit(app.exec_())

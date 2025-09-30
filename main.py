@@ -20,14 +20,13 @@ def run_multiple_py(files):
 if __name__ == "__main__":
     # List of Python files you want to run
     files_to_run = [
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\image_overlay.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\msg_scr.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\gif_overlay.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\message_of_chat.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\credentials.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\setting.py",
-        r"C:\Users\HP\Documents\project\memoaura\memoaura\debug_mode.py",
-        "test_run.py"
+        "msg_scr.py",
+        "gif_overlay.py",
+        "message_of_chat.py",
+        "credentials.py",
+        "setting.py",
+        "debug_mode.py",
+        "layer.py"
     ]
     
     run_multiple_py(files_to_run)

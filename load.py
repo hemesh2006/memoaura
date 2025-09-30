@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QProgres
 from PyQt5.QtCore import Qt, QTimer, QSize
 from PyQt5.QtGui import QFont, QMovie
 import load
+import gif_manage as gif
 class LoadingOverlay(QWidget):
     def __init__(self):
         super().__init__()
@@ -19,7 +20,7 @@ class LoadingOverlay(QWidget):
 
         # GIF Animation
         self.gif_label = QLabel()
-        self.gif = QMovie("running.gif")  # 👈 Add your GIF path here
+        self.gif = QMovie("r.gif")  # 👈 Add your GIF path here
         self.gif.setScaledSize(QSize(140, 140))  # slightly larger GIF
         self.gif_label.setMovie(self.gif)
         self.gif.start()
@@ -69,9 +70,10 @@ class LoadingOverlay(QWidget):
             self.close()  # close overlay when done
 
 if __name__ == "__main__":
+    
     app = QApplication(sys.argv)
     loader = LoadingOverlay()
     loader.show()
     app.exec_()
-    print("hellowere")
+    
     

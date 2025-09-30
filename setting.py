@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 
-SETTINGS_FILE = r"C:\Users\HP\Documents\project\memoaura\memoaura\system_info.json"
+SETTINGS_FILE = "system_info.json"
 
 # ---------------- Settings Load/Save ----------------
 def load_settings():

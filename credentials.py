@@ -1,17 +1,19 @@
 import sys
 import os
+import time
 import json
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QMainWindow, QLabel, QLineEdit,
     QPushButton, QVBoxLayout, QMessageBox, QHBoxLayout,
     QStackedWidget
 )
+import gif_manage as gif
 from PyQt5.QtGui import QMovie
 from PyQt5.QtCore import Qt, QSize
 import  NOTIFICATION.notify2 as p
 import load
 CREDENTIALS_FILE = "users.json"
-sys_info_path=r"C:\Users\HP\Documents\project\memoaura\memoaura\account.json"
+sys_info_path="account.json"
 f=open(sys_info_path)
 data=json.load(f)
 f.close()
@@ -160,7 +162,10 @@ class LoginPage(QWidget):
                 datas=json.load(f)
                 datas['already_login']="True"
                 datas['username']=username
-                json.dump(datas,open(sys_info_path,"w"),indent=4)   
+                gif.gif_add("gif.json", "tick.gif", [700, 350])
+                json.dump(datas,open(sys_info_path,"w"),indent=4)
+                time.sleep(2)
+                gif.gif_remove("gif.json","tick.gif") 
                 sys.exit(0)
                 return
 
