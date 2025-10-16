@@ -1,0 +1,9 @@
+PyQt5
+Pillow
+opencv-python
+psutil
+keyboard
+pyautogui
+numpy
+requests
+jsonschema
